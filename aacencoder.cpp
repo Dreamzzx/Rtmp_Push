@@ -60,3 +60,35 @@ bool AACEncoder::Init(Properties properties, AVRational audio_tb)
     LogInfo( "AAC: Encoder open with frame sample size: %d",ctx_->frame_size);
     return true;
 }
+
+int AACEncoder::Input(const AVFrame *frame)
+{
+    int ret = avcodec_send_frame(ctx_,frame);
+    if(AVERROR(EAGAIN) == ret) {
+        LogWarn("please receive audio packet then send frame");
+        return -1;
+    } else if(AVERROR_EOF == ret) {
+        LogWarn("if you wan continue use it, please new one audio decoder again");
+        return -2;
+    }
+    if(ret < 0) {
+        return -3;
+    }
+    return 0;
+}
+
+int AACEncoder::Output(AVPacket *pkt)
+{
+    int ret = avcodec_receive_packet(ctx_, pkt);
+    if(ret != 0) {
+        if(AVERROR(EAGAIN) == ret) {
+            // LOG(WARNING) << "output audio is not available in the current state - user must try to send input";
+            return -1;
+        } else if(AVERROR_EOF == ret) {
+            LogWarn("the audio encoder has been fully flushed, and there will be no more output packets");
+            return -2;
+        }
+        return -3;
+    }
+    return 0;
+}

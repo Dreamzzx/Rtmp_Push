@@ -9,6 +9,38 @@ public:
 
     bool Init(Properties properties,AVRational aduio_tb);
 
+    int Input(const AVFrame* frame);
+
+    int Output(AVPacket*pkt);
+
+    int get_sample_rate(){
+        return ctx_->sample_rate;
+    }
+
+    int get_sample_fmt()
+    {
+        return ctx_->sample_fmt;
+    }
+
+    AVChannelLayout get_channel_layout()
+    {
+        return ctx_->ch_layout;
+    }
+
+    int get_frame_size()
+    {
+        return ctx_->frame_size;
+    }
+
+    AVRational get_time_base()
+    {
+        return ctx_->time_base;
+    }
+
+    int get_profile()
+    {
+        return ctx_->profile;
+    }
 private:
 
     AVCodec 	*codec_ = nullptr;

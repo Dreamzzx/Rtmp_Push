@@ -70,3 +70,8 @@ void RtmpBase::initRtmp()
        //LogError("WSAStartup is failed!");
     }
 }
+
+bool RtmpBase::IsConnect()
+{
+    return RTMP_IsConnected(rtmp_);
+}

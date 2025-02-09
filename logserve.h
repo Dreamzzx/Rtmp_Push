@@ -7,6 +7,7 @@
 #include <fstream>
 #include <time.h>
 #include <cstdarg>
+#include <mutex>
 
 class LogServe
 {
@@ -32,10 +33,11 @@ private:
     LogServe();
     ~LogServe();
 
-    std::ofstream fileStream;
+    std::ofstream fileStream_;
     static const char* log_level[LEVEL_COUNT];
     std::string log_filename;
     static LogServe* m_instance;
+    std::mutex fileMutex_;
 };
 
 #define LogDebug(format,...) \

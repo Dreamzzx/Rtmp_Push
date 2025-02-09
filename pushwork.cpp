@@ -51,28 +51,28 @@ bool PushWork::Init(const Properties &properties)
     video_b_frames_ = properties.GetProperty("video_b_frames", 0);
 
     // 是否启用rtmp推流
-    if(true)
-    {
-        rtmp_url_ = properties.GetProperty("rtmp_url","");
-        if(rtmp_url_ == "")
-        {
-            LogError("rtmp_url is null");
-            return false;
-        }
+//    if(true)
+//    {
+//        rtmp_url_ = properties.GetProperty("rtmp_url","");
+//        if(rtmp_url_ == "")
+//        {
+//            LogError("rtmp_url is null");
+//            return false;
+//        }
 
-        // 启动RTMP推流器
-        rtmp_push_ = new RtmpPush();
-        if(!rtmp_push_)
-        {
-            LogError("new RtmpPush is failed!");
-            return false;
-        }
-        if(!rtmp_push_->Connect(rtmp_url_))
-        {
-            LogError("RtmpPush connect is failed!");
-            return false;
-        }
-    }
+//        // 启动RTMP推流器
+//        rtmp_push_ = new RtmpPush();
+//        if(!rtmp_push_)
+//        {
+//            LogError("new RtmpPush is failed!");
+//            return false;
+//        }
+//        if(!rtmp_push_->Connect(rtmp_url_))
+//        {
+//            LogError("RtmpPush connect is failed!");
+//            return false;
+//        }
+//    }
 
     // 初始化音频解码器
     audio_pkt_ = av_packet_alloc();
@@ -110,6 +110,30 @@ bool PushWork::Init(const Properties &properties)
         return false;
     }
 
+    // 初始化音频采集器
+    audio_capturer_ = new AudioCapturer();
+    Properties aud_cap_properties;
+    aud_cap_properties.SetProperty("audio_enc_sample_rate", audio_encoder_->get_sample_rate());
+    aud_cap_properties.SetProperty("audio_enc_sample_fmt", audio_encoder_->get_sample_fmt());
+    //aud_cap_properties.SetProperty("audio_enc_channel_layout", audio_encoder_->get_channel_layout());
+    aud_cap_properties.SetProperty("audio_enc_frame_size", audio_encoder_->get_frame_size());
+    aud_cap_properties.SetProperty("audio_device_name", audio_device_name_);
+    aud_cap_properties.SetProperty("audio_ns", properties.GetProperty("audio_ns", -1));
+    aud_cap_properties.SetProperty("audio_agc", properties.GetProperty("audio_agc", 0));
+    if (audio_capturer_->Init(aud_cap_properties,audio_encoder_->get_channel_layout()) == false)
+    {
+        LogError( "AudioCapturer Init failed");
+        return false;
+    }
+    audio_capturer_->AddCallback(std::bind(&PushWork::AudioFrameCallback, this, std::placeholders::_1));
+    if (audio_capturer_->Start() == false)
+    {
+        LogError("AudioCapturer Start failed");
+        return false;
+    }
+
+    // 初始化视频采集器
+
     return true;
 }
 
@@ -118,4 +142,50 @@ bool PushWork::Init(const Properties &properties)
 void PushWork::AddVideoPreviewCallBack(std::function<int (const Frame *)> callback)
 {
     video_preview_callback_ = callback;
+}
+
+void PushWork::AudioFrameCallback(AVFrame *frame)
+{
+    if(need_send_audio_spec_config_)
+    {
+        need_send_audio_spec_config_ = false;
+        AudioSpecMsg *aud_spc_msg = new AudioSpecMsg(audio_encoder_->get_profile(),
+                                                     audio_encoder_->get_channel_layout().nb_channels,
+                                                     audio_encoder_->get_sample_rate());
+        aud_spc_msg->pts_ = 0;
+
+    }
+
+    frame->pts = av_rescale_q(frame->pts,capture_time_base_,audio_encoder_->get_time_base());
+    int ret = audio_encoder_->Input(frame);
+    if(ret < 0)
+    {
+        LogError("audio_encoder_->Input is failed!");
+        //return;
+    }
+    do{
+        ret = audio_encoder_->Output(audio_pkt_);
+        if(ret == 0) {
+            if(true) {
+                pushRtmpAudio(audio_pkt_);
+            }
+//            if(enable_record_) {
+//                pushRecordAudio(audio_packet_);
+//            }
+            av_packet_unref(audio_pkt_);
+            continue;
+        } else {
+            break;
+        }
+    }while(ret == 0);
+
+}
+
+bool PushWork::pushRtmpAudio(AVPacket *pkt)
+{
+    int aac_size = pkt->size;
+
+
+
+    return true;
 }

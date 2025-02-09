@@ -31,26 +31,38 @@ LIBS += $$PWD/lib/ffmpeg6.1.2/lib/avformat.lib   \
 
 SOURCES += \
     aacencoder.cpp \
+    audiocapturer.cpp \
+    audioresample.cpp \
+    database.cpp \
     displaywidget.cpp \
     globalhelp.cpp \
     h264encoder.cpp \
     logserve.cpp \
+    loopbase.cpp \
     main.cpp \
     mainwindow.cpp \
+    naluloop.cpp \
     pushwork.cpp \
     rtmpbase.cpp \
-    rtmppush.cpp
+    rtmppush.cpp \
+    videocapturer.cpp
 
 HEADERS += \
     aacencoder.h \
+    audiocapturer.h \
+    audioresample.h \
+    database.h \
     displaywidget.h \
     globalhelp.h \
     h264encoder.h \
     logserve.h \
+    loopbase.h \
     mainwindow.h \
+    naluloop.h \
     pushwork.h \
     rtmpbase.h \
-    rtmppush.h
+    rtmppush.h \
+    videocapturer.h
 
 FORMS += \
     mainwindow.ui

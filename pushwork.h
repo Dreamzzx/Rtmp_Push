@@ -6,9 +6,10 @@
 #include "aacencoder.h"
 #include "h264encoder.h"
 #include "rtmpbase.h"
-#include "globalhelp.h"
-#include "logserve.h"
 #include "rtmppush.h"
+#include "audiocapturer.h"
+#include "videocapturer.h"
+#include "database.h"
 
 class PushWork
 {
@@ -56,6 +57,14 @@ public:
 
     void AddVideoPreviewCallBack(std::function<int(const Frame*)> callback);
 
+    // pcm数据回调
+    void AudioFrameCallback(AVFrame* frame);
+
+
+    // 推送音频数据到RTMP
+    bool pushRtmpAudio(AVPacket*pkt);
+    // 推送视频数据到RTMP
+    bool pushRtmpVideo(AVPacket*pkt);
 private:
 
     std::string audio_device_name_;
@@ -86,11 +95,18 @@ private:
     RtmpPush*rtmp_push_;
     std::string rtmp_url_; // rtmp推流地址
 
+    bool need_send_audio_spec_config_ = true;
+
     AVPacket*audio_pkt_;
     AACEncoder*audio_encoder_;
 
     AVPacket*video_pkt_;
     H264Encoder*video_encoder_;
+
+    // 捕获音视频帧事件基准为{1,1000} 即单位为ms
+    AVRational capture_time_base_ = AVRational{1,1000};
+
+    AudioCapturer* audio_capturer_;
     // 视频预览回调函数  &MainWindow::OutputVideo
     std::function<int(const Frame*)> video_preview_callback_ = nullptr;
 };

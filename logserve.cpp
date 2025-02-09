@@ -23,14 +23,14 @@ void LogServe::open(std::string filename)
 {
     log_filename = filename;
 
-    fileStream.open(filename,std::ios::app|std::ios::out);
+    fileStream_.open(filename,std::ios::app|std::ios::out);
 }
 
 void LogServe::close()
 {
-    if(fileStream.is_open())
+    if(fileStream_.is_open())
     {
-        fileStream.close();
+        fileStream_.close();
         delete m_instance;
         m_instance = nullptr;
     }
@@ -38,8 +38,9 @@ void LogServe::close()
 
 void LogServe::log(Level level, const char *file, int line, const char *format,...)
 {
-    if(fileStream.is_open())
+    if(fileStream_.is_open())
     {
+        std::lock_guard<std::mutex>lock(fileMutex_);
         time_t ticks = time(NULL);
         struct tm* tm = std::localtime(&ticks);
         char timestamp[32];
@@ -54,7 +55,7 @@ void LogServe::log(Level level, const char *file, int line, const char *format,.
             char * buffer = new char[size + 1];
             snprintf(buffer,size+1,fmt,timestamp,log_level[level],file,line);
             buffer[size] ='\0';
-            fileStream<<buffer<<std::endl;
+            fileStream_<<buffer<<std::endl;
             delete[] buffer;
         }
 
@@ -68,7 +69,7 @@ void LogServe::log(Level level, const char *file, int line, const char *format,.
             char * buffer = new char[size + 1];
             va_start(arg_ptr,format);
             vsnprintf(buffer,size + 1,format,arg_ptr);
-            fileStream<<buffer<<std::endl;
+            fileStream_<<buffer<<std::endl;
             va_end(arg_ptr);
             delete[] buffer;
         }

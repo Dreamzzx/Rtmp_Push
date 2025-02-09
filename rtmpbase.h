@@ -8,6 +8,7 @@
 
 #include "globalhelp.h"
 #include "rtmp.h"
+#include "database.h"
 
 //#ifdef _MSC_VER
 //static inline int strcasecmp(const char *s1, const char *s2)
@@ -193,8 +194,11 @@ public:
 
     virtual bool Connect(std::string url);
     bool Connect();
+
+    bool IsConnect();
 private:
     void initRtmp();
+
 protected:
     RTMP *rtmp_;
 
@@ -215,5 +219,6 @@ typedef struct Frame {
     int uploaded;
     int flip_v;
 } Frame;
+
 
 #endif // RTMPBASE_H

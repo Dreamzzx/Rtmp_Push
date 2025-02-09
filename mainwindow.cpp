@@ -50,8 +50,7 @@ int MainWindow::startLive(std::string url)
 //    }
 
     Properties properties;
-
-    properties.SetProperty("audio_device_name",ui->Mic_comboBox->currentText().toStdString());
+    properties.SetProperty("audio_device_name","audio=Microphone Array (Realtek(R) Audio)");
     int audio_ns = -1,audio_agc = 0;
     properties.SetProperty("audio_ns", audio_ns);
     properties.SetProperty("audio_agc", audio_agc);
@@ -91,7 +90,7 @@ int MainWindow::startLive(std::string url)
     if(push_work_->Init(properties) == false)
     {
         delete push_work_;
-        push_work_ == nullptr;
+        push_work_ = nullptr;
         LogError("push_work_ init failed!");
         return -1;
     }

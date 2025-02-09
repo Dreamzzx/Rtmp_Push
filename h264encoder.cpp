@@ -67,7 +67,37 @@ bool H264Encoder::Init(Properties properties, AVRational video_tb)
         av_dict_set(&param, "tune", "zero-latency", 0);
     }
     ctx_->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;    //extradata拷贝 sps pps
+    if(avcodec_open2(ctx_,codec_,&param) < 0)
+    {
+        LogError("open avcodec is failed!");
+        return false;
+    }
 
+    //读取sps pps信息
+    if(ctx_->extradata)
+    {
+        LogInfo("ctx_->extradata size :%d",ctx_->extradata_size);
+        //  7byte     8byte
+        // 初始码 sps 初始码 pps
+        // 00 00 00 1 sps 00 00 00 01 pps
+        uint8_t*sps = ctx_->extradata+4; //直接到数据
+        int sps_len = 0;
+        uint8_t*pps = NULL;
+        int pps_len = 0;
+        uint8_t* data = ctx_->extradata+4;
+        for(int i = 0;i<ctx_->extradata_size -4;i++)
+        {
+            if(0 == data[i]&&0 == data[i+1]&&0 == data[i+2]&&1 == data[i+3])
+            {
+                pps = &data[i+4];
+                break;
+            }
+        }
+        sps_len = int(pps - sps)-4; //4 为初始码
+        pps_len = ctx_->extradata_size - 4*2-sps_len;
+        sps_.append(sps,sps+sps_len);
+        pps_.append(pps,pps+pps_len);
+    }
 
     return true;
 }
